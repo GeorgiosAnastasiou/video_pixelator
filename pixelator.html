@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Video Pixelator</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar for dark mode */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937; /* gray-800 */
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #4b5563; /* gray-600 */
+            border-radius: 20px;
+            border: 3px solid #1f2937; /* gray-800 */
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: #6b7280; /* gray-500 */
+        }
+        /* Style for range sliders */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #374151; /* gray-700 */
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3b82f6; /* blue-500 */
+            cursor: pointer;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3b82f6; /* blue-500 */
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white font-sans antialiased min-h-screen">
+
+    <!-- Main Container -->
+    <div class="container mx-auto p-4 lg:p-8 max-w-7xl">
+        
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-blue-400">Web-Based Video Pixelator</h1>
+            <p class="text-lg text-gray-400 mt-2">Video pixelator, ENJOY! </p>
+        </header>
+
+        <!-- Main Layout -->
+        <div class="flex flex-col lg:flex-row gap-8">
+
+            <!-- Left Column: Settings & Palette -->
+            <div class="lg:w-1/2 w-full space-y-6">
+                
+                <!-- Video Upload -->
+                <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                    <h2 class="text-2xl font-semibold mb-4 text-blue-300">1. Upload Video</h2>
+                    <label for="video-upload" class="block mb-2 text-sm font-medium text-gray-300">Select a video file (.mp4, .webm):</label>
+                    <input type="file" id="video-upload" accept="video/mp4,video/webm" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600">
+                    <video id="video-preview" controls class="mt-4 w-full rounded-lg bg-black hidden"></video>
+                </div>
+
+                <!-- Video Settings -->
+                <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                    <h2 class="text-2xl font-semibold mb-4 text-blue-300">2. Processing Settings</h2>
+                    <div class="space-y-4">
+                        <!-- FPS -->
+                        <div>
+                            <label for="fps-slider" class="block mb-1 text-sm font-medium">Target FPS: <span id="fps-value" class="font-bold text-blue-300">24</span></label>
+                            <input id="fps-slider" type="range" min="1" max="30" value="24" class="w-full">
+                        </div>
+                        <!-- Block Width -->
+                        <div>
+                            <label for="block-w-slider" class="block mb-1 text-sm font-medium">Block Width: <span id="block-w-value" class="font-bold text-blue-300">192</span></label>
+                            <input id="block-w-slider" type="range" min="10" max="960" value="192" class="w-full">
+                        </div>
+                        <!-- Smoothing -->
+                        <div>
+                            <label for="smooth-slider" class="block mb-1 text-sm font-medium">Smoothing %: <span id="smooth-value" class="font-bold text-blue-300">0</span></label>
+                            <input id="smooth-slider" type="range" min="0" max="75" value="0" class="w-full">
+                        </div>
+                        <!-- RGB Offsets -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="r-slider" class="block mb-1 text-sm font-medium">R Offset: <span id="r-value" class="font-bold text-red-400">0</span></label>
+                                <input id="r-slider" type="range" min="-255" max="255" value="0" class="w-full">
+                            </div>
+                            <div>
+                                <label for="g-slider" class="block mb-1 text-sm font-medium">G Offset: <span id="g-value" class="font-bold text-green-400">0</span></label>
+                                <input id="g-slider" type="range" min="-255" max="255" value="0" class="w-full">
+                            </div>
+                            <div>
+                                <label for="b-slider" class="block mb-1 text-sm font-medium">B Offset: <span id="b-value" class="font-bold text-blue-400">0</span></label>
+                                <input id="b-slider" type="range" min="-255" max="255" value="0" class="w-full">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Palette Manager -->
+                <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                    <h2 class="text-2xl font-semibold mb-4 text-blue-300">3. Palette Manager</h2>
+                    
+                    <!-- Palette Selection -->
+                    <div class="flex flex-wrap gap-2 items-center mb-4">
+                        <label for="palette-dd" class="text-sm font-medium">Palette:</label>
+                        <select id="palette-dd" class="flex-grow bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"></select>
+                        <button id="create-palette-btn" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium">New</button>
+                        <button id="delete-palette-btn" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-medium">Delete</button>
+                    </div>
+
+                    <!-- Palette Preview -->
+                    <label class="block mb-2 text-sm font-medium text-gray-300">Palette Preview:</label>
+                    <div id="palette-preview" class="w-full h-16 border-2 border-gray-700 rounded-lg flex overflow-x-auto bg-gray-900 mb-4"></div>
+                    
+                    <!-- Add Colors -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block mb-2 text-sm font-medium">Add Color</label>
+                            <div class="flex gap-2">
+                                <input type="color" id="color-picker" value="#FF0000" class="p-0 w-10 h-10 border-none rounded-lg cursor-pointer">
+                                <button id="add-color-btn" class="flex-grow bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium">Add</button>
+                                <button id="remove-color-btn" class="flex-grow bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg text-sm font-medium">Remove</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="fast-input" class="block mb-2 text-sm font-medium">Add Hex List (csv)</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="fast-input" placeholder="#ff0000,#00ff00" class="flex-grow bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500">
+                                <button id="add-all-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium">Add All</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Generate from Image -->
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-300">Generate Palette from Image</label>
+                        <input type="file" id="image-upload" accept="image/*" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-600 file:text-white hover:file:bg-gray-500 mb-2">
+                        <div class="flex gap-4 items-center">
+                            <div class="flex-grow">
+                                <label for="cluster-slider" class="block mb-1 text-sm">Num Colors: <span id="cluster-value" class="font-bold text-blue-300">8</span></label>
+                                <input id="cluster-slider" type="range" min="2" max="16" value="8" class="w-full">
+                            </div>
+                            <button id="gen-palette-btn" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium mt-3">Generate</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div> <!-- End Left Column -->
+
+            <!-- Right Column: Run & Output -->
+            <div class="lg:w-1/2 w-full space-y-6">
+                
+                <!-- Run Process -->
+                <div class="bg-gray-800 p-6 rounded-xl shadow-lg text-center">
+                    <h2 class="text-2xl font-semibold mb-4 text-blue-300">4. Run & Download</h2>
+                    <button id="run-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold py-4 px-6 rounded-lg transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                        Run Process
+                    </button>
+                </div>
+
+                <!-- Progress & Output -->
+                <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                    <h2 class="text-2xl font-semibold mb-4 text-blue-300">Output</h2>
+                    
+                    <!-- Progress Bars -->
+                    <div class="space-y-4 mb-4">
+                        <div>
+                            <label for="proc-bar" class="block mb-1 text-sm font-medium">Frame Processing:</label>
+                            <progress id="proc-bar" value="0" max="100" class="w-full h-4 rounded-lg overflow-hidden [&::-webkit-progress-bar]:bg-gray-700 [&::-webkit-progress-value]:bg-blue-500 [&::-moz-progress-bar]:bg-blue-500"></progress>
+                        </div>
+                        <div>
+                            <label for="enc-bar" class="block mb-1 text-sm font-medium">Video Encoding:</label>
+                            <progress id="enc-bar" value="0" max="100" class="w-full h-4 rounded-lg overflow-hidden [&::-webkit-progress-bar]:bg-gray-700 [&::-webkit-progress-value]:bg-green-500 [&::-moz-progress-bar]:bg-green-500"></progress>
+                        </div>
+                    </div>
+                    
+                    <!-- Log -->
+                    <div id="video-log" class="w-full h-24 bg-gray-900 rounded-lg p-3 text-sm text-gray-400 overflow-y-auto font-mono mb-4">
+                        Waiting for process to start...
+                    </div>
+
+                    <!-- Output Video -->
+                    <video id="output-video" controls class="w-full rounded-lg bg-black hidden"></video>
+                    <a id="download-link" class="hidden mt-4 w-full text-center bg-green-600 hover:bg-green-700 text-white text-lg font-bold py-3 px-6 rounded-lg transition-all duration-200 shadow-lg">
+                        Download Video
+                    </a>
+                </div>
+
+            </div> <!-- End Right Column -->
+
+        </div>
+    </div>
+
+    <!-- Hidden Canvases for processing -->
+    <canvas id="main-canvas" class="hidden"></canvas>
+    <canvas id="pixel-canvas" class="hidden"></canvas>
+    <canvas id="image-gen-canvas" class="hidden"></canvas>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- STATE ---
+            let palettes = {};
+            let currentVideoFile = null;
+            let currentImageFile = null;
+            let isRemoveMode = false;
+            let videoElement = document.createElement('video');
+            let mainCanvas = document.getElementById('main-canvas');
+            let mainCtx = mainCanvas.getContext('2d');
+            let pixelCanvas = document.getElementById('pixel-canvas');
+            let pixelCtx = pixelCanvas.getContext('2d');
+            let imageGenCanvas = document.getElementById('image-gen-canvas');
+            let imageGenCtx = imageGenCanvas.getContext('2d');
+            let mediaRecorder;
+            let recordedChunks = [];
+            let videoDuration = 0;
+            let videoWidth = 0;
+            let videoHeight = 0;
+
+            // --- PALETTE CONSTANTS ---
+            const PALETTE_STORE_KEY = 'video-pixelator-palettes';
+
+            // --- UI ELEMENTS ---
+            const videoUpload = document.getElementById('video-upload');
+            const videoPreview = document.getElementById('video-preview');
+            const fpsSlider = document.getElementById('fps-slider');
+            const fpsValue = document.getElementById('fps-value');
+            const blockWSlider = document.getElementById('block-w-slider');
+            const blockWValue = document.getElementById('block-w-value');
+            const smoothSlider = document.getElementById('smooth-slider');
+            const smoothValue = document.getElementById('smooth-value');
+            const rSlider = document.getElementById('r-slider');
+            const rValue = document.getElementById('r-value');
+            const gSlider = document.getElementById('g-slider');
+            const gValue = document.getElementById('g-value');
+            const bSlider = document.getElementById('b-slider');
+            const bValue = document.getElementById('b-value');
+            const paletteDd = document.getElementById('palette-dd');
+            const createPaletteBtn = document.getElementById('create-palette-btn');
+            const deletePaletteBtn = document.getElementById('delete-palette-btn');
+            const palettePreview = document.getElementById('palette-preview');
+            const colorPicker = document.getElementById('color-picker');
+            const addColorBtn = document.getElementById('add-color-btn');
+            const removeColorBtn = document.getElementById('remove-color-btn');
+            const fastInput = document.getElementById('fast-input');
+            const addAllBtn = document.getElementById('add-all-btn');
+            const imageUpload = document.getElementById('image-upload');
+            const clusterSlider = document.getElementById('cluster-slider');
+            const clusterValue = document.getElementById('cluster-value');
+            const genPaletteBtn = document.getElementById('gen-palette-btn');
+            const runBtn = document.getElementById('run-btn');
+            const procBar = document.getElementById('proc-bar');
+            const encBar = document.getElementById('enc-bar');
+            const videoLog = document.getElementById('video-log');
+            const outputVideo = document.getElementById('output-video');
+            const downloadLink = document.getElementById('download-link');
+
+            // --- HELPER FUNCTIONS ---
+            const log = (message, isError = false) => {
+                console.log(message);
+                videoLog.innerHTML = `<div class="${isError ? 'text-red-400' : 'text-gray-300'}">${message}</div>` + videoLog.innerHTML;
+            };
+
+            const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
+            
+            const hexToRgb = (hex) => {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)] : null;
+            };
+
+            const rgbToHex = (r, g, b) => {
+                return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+            };
+
+            // Euclidean distance squared (faster, same result for comparison)
+            const colorDistance = (rgb1, rgb2) => {
+                return (rgb1[0] - rgb2[0]) ** 2 + (rgb1[1] - rgb2[1]) ** 2 + (rgb1[2] - rgb2[2]) ** 2;
+            };
+
+            const findClosestColor = (rgb, paletteRgb) => {
+                let minDistance = Infinity;
+                let closestColor = paletteRgb[0];
+                for (const color of paletteRgb) {
+                    const distance = colorDistance(rgb, color);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        closestColor = color;
+                    }
+                }
+                return closestColor;
+            };
+
+            // --- PALETTE MANAGER LOGIC ---
+            const savePalettes = () => {
+                try {
+                    localStorage.setItem(PALETTE_STORE_KEY, JSON.stringify(palettes));
+                } catch (e) {
+                    log('Error saving palettes to localStorage.', true);
+                }
+            };
+
+            const loadPalettes = () => {
+                try {
+                    const stored = localStorage.getItem(PALETTE_STORE_KEY);
+                    if (stored) {
+                        palettes = JSON.parse(stored);
+                    } else {
+                        // Create a default palette
+                        palettes = {
+                            'Default Grayscale': ['#000000', '#FFFFFF'],
+                            'Gameboy': ['#0f380f', '#306230', '#8bac0f', '#9bbc0f'],
+                        };
+                        savePalettes();
+                    }
+                    updatePaletteDropdown();
+                    showPalettePreview();
+                } catch (e) {
+                    log('Error loading palettes. Resetting to default.', true);
+                    palettes = { 'Default': ['#FF0000', '#00FF00', '#0000FF'] };
+                    savePalettes();
+                }
+            };
+
+            const updatePaletteDropdown = () => {
+                paletteDd.innerHTML = '';
+                const names = Object.keys(palettes);
+                if (names.length === 0) {
+                    // Ensure there's always at least one palette
+                    palettes['Default'] = ['#FF0000', '#00FF00', '#0000FF'];
+                    savePalettes();
+                    names.push('Default');
+                }
+                for (const name of names) {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    paletteDd.appendChild(option);
+                }
+                paletteDd.value = names[0];
+            };
+
+            const showPalettePreview = () => {
+                const selectedPaletteName = paletteDd.value;
+                const colors = palettes[selectedPaletteName] || [];
+                palettePreview.innerHTML = '';
+                
+                if (colors.length === 0) {
+                    palettePreview.innerHTML = `<div class="flex-grow flex items-center justify-center text-sm text-gray-500">Empty Palette</div>`;
+                }
+
+                colors.forEach((color, index) => {
+                    const swatch = document.createElement('div');
+                    swatch.style.backgroundColor = color;
+                    swatch.style.flex = '1';
+                    swatch.style.minWidth = '20px';
+                    swatch.style.position = 'relative';
+                    swatch.style.cursor = 'pointer';
+                    swatch.title = color;
+
+                    if (isRemoveMode) {
+                        const removeBtn = document.createElement('button');
+                        removeBtn.textContent = 'x';
+                        removeBtn.className = 'absolute top-0 left-1/2 -translate-x-1/2 text-white bg-red-600 rounded-full w-5 h-5 text-xs flex items-center justify-center';
+                        removeBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            palettes[selectedPaletteName].splice(index, 1);
+                            savePalettes();
+                            showPalettePreview(); // Re-render
+                        };
+                        swatch.appendChild(removeBtn);
+                    }
+                    palettePreview.appendChild(swatch);
+                });
+            };
+
+            // --- PALETTE EVENT HANDLERS ---
+            paletteDd.addEventListener('change', () => {
+                isRemoveMode = false;
+                removeColorBtn.classList.remove('bg-red-500');
+                removeColorBtn.classList.add('bg-yellow-500');
+                showPalettePreview();
+            });
+
+            createPaletteBtn.addEventListener('click', () => {
+                const name = prompt('Enter new palette name:');
+                if (name && !palettes[name]) {
+                    palettes[name] = [];
+                    savePalettes();
+                    updatePaletteDropdown();
+                    paletteDd.value = name;
+                    showPalettePreview();
+                } else if (palettes[name]) {
+                    alert('A palette with this name already exists.');
+                }
+            });
+
+            deletePaletteBtn.addEventListener('click', () => {
+                const name = paletteDd.value;
+                if (Object.keys(palettes).length <= 1) {
+                    alert('Cannot delete the last palette.');
+                    return;
+                }
+                if (confirm(`Are you sure you want to delete the palette "${name}"?`)) {
+                    delete palettes[name];
+                    savePalettes();
+                    updatePaletteDropdown();
+                    showPalettePreview();
+                }
+            });
+
+            addColorBtn.addEventListener('click', () => {
+                const name = paletteDd.value;
+                const color = colorPicker.value.toUpperCase();
+                if (!palettes[name].includes(color)) {
+                    palettes[name].push(color);
+                    savePalettes();
+                    showPalettePreview();
+                }
+            });
+
+            removeColorBtn.addEventListener('click', () => {
+                isRemoveMode = !isRemoveMode;
+                removeColorBtn.classList.toggle('bg-red-500', isRemoveMode);
+                removeColorBtn.classList.toggle('bg-yellow-500', !isRemoveMode);
+                showPalettePreview();
+            });
+
+            addAllBtn.addEventListener('click', () => {
+                const name = paletteDd.value;
+                const colors = fastInput.value.split(',')
+                    .map(c => c.trim().toUpperCase())
+                    .filter(c => /^#[0-9A-F]{6}$/i.test(c));
+                
+                for (const color of colors) {
+                    if (!palettes[name].includes(color)) {
+                        palettes[name].push(color);
+                    }
+                }
+                savePalettes();
+                showPalettePreview();
+                fastInput.value = '';
+            });
+
+            // --- UI SLIDER HANDLERS ---
+            fpsSlider.addEventListener('input', () => fpsValue.textContent = fpsSlider.value);
+            blockWSlider.addEventListener('input', () => blockWValue.textContent = blockWSlider.value);
+            smoothSlider.addEventListener('input', () => smoothValue.textContent = smoothSlider.value);
+            rSlider.addEventListener('input', () => rValue.textContent = rSlider.value);
+            gSlider.addEventListener('input', () => gValue.textContent = gSlider.value);
+            bSlider.addEventListener('input', () => bValue.textContent = bSlider.value);
+            clusterSlider.addEventListener('input', () => clusterValue.textContent = clusterSlider.value);
+
+            // --- FILE HANDLERS ---
+            videoUpload.addEventListener('change', (e) => {
+                currentVideoFile = e.target.files[0];
+                if (currentVideoFile) {
+                    const url = URL.createObjectURL(currentVideoFile);
+                    videoPreview.src = url;
+                    videoPreview.classList.remove('hidden');
+                    videoElement.src = url;
+                    videoElement.onloadedmetadata = () => {
+                        videoDuration = videoElement.duration;
+                        videoWidth = videoElement.videoWidth;
+                        videoHeight = videoElement.videoHeight;
+                        log(`Video loaded: ${videoWidth}x${videoHeight}, ${videoDuration.toFixed(2)}s`);
+                    };
+                }
+            });
+
+            imageUpload.addEventListener('change', (e) => {
+                currentImageFile = e.target.files[0];
+            });
+            
+            // --- PALETTE GENERATION (K-MEANS) ---
+            /**
+             * Minimal K-Means implementation
+             * Source: Adapted from various public gists.
+             * @param {Array<Array<number>>} data - Array of points e.g., [[r,g,b], [r,g,b], ...]
+             * @param {number} k - Number of clusters
+             * @returns {Array<Array<number>>} - Array of centroids e.g., [[r,g,b], ...]
+             */
+            const simpleKMeans = (data, k) => {
+                if (!data || data.length === 0) return [];
+
+                // 1. Initialize centroids randomly from data points
+                let centroids = [];
+                const dataCopy = [...data];
+                for (let i = 0; i < k; i++) {
+                    const index = Math.floor(Math.random() * dataCopy.length);
+                    centroids.push(dataCopy.splice(index, 1)[0]);
+                    if (dataCopy.length === 0) break; // In case k > data.length
+                }
+                k = centroids.length; // Adjust k if needed
+
+                let assignments = new Array(data.length);
+                let clusters = new Array(k);
+                let changed = true;
+                
+                for (let iter = 0; iter < 20 && changed; iter++) { // Max 20 iterations
+                    changed = false;
+                    
+                    // 2. Assign points to nearest centroid
+                    for (let i = 0; i < data.length; i++) {
+                        let minD = Infinity;
+                        let bestCluster = 0;
+                        for (let j = 0; j < k; j++) {
+                            const d = colorDistance(data[i], centroids[j]);
+                            if (d < minD) {
+                                minD = d;
+                                bestCluster = j;
+                            }
+                        }
+                        if (assignments[i] !== bestCluster) {
+                            assignments[i] = bestCluster;
+                            changed = true;
+                        }
+                    }
+
+                    // 3. Recalculate centroids
+                    for (let j = 0; j < k; j++) {
+                        clusters[j] = { sum: [0, 0, 0], count: 0 };
+                    }
+
+                    for (let i = 0; i < data.length; i++) {
+                        const j = assignments[i];
+                        clusters[j].sum[0] += data[i][0];
+                        clusters[j].sum[1] += data[i][1];
+                        clusters[j].sum[2] += data[i][2];
+                        clusters[j].count++;
+                    }
+
+                    for (let j = 0; j < k; j++) {
+                        if (clusters[j].count > 0) {
+                            centroids[j] = [
+                                Math.round(clusters[j].sum[0] / clusters[j].count),
+                                Math.round(clusters[j].sum[1] / clusters[j].count),
+                                Math.round(clusters[j].sum[2] / clusters[j].count)
+                            ];
+                        }
+                        // If a cluster becomes empty, re-initialize it (simple way)
+                        else {
+                            centroids[j] = data[Math.floor(Math.random() * data.length)];
+                        }
+                    }
+                }
+                return centroids;
+            };
+
+            genPaletteBtn.addEventListener('click', async () => {
+                if (!currentImageFile) {
+                    alert('Please upload an image first.');
+                    return;
+                }
+
+                log('Generating palette from image...');
+                genPaletteBtn.disabled = true;
+                genPaletteBtn.textContent = 'Generating...';
+
+                try {
+                    const img = new Image();
+                    img.src = URL.createObjectURL(currentImageFile);
+                    await new Promise((resolve, reject) => {
+                        img.onload = resolve;
+                        img.onerror = reject;
+                    });
+
+                    // Resize image for faster processing (max 200px)
+                    const maxDim = 200;
+                    const scale = Math.min(maxDim / img.width, maxDim / img.height);
+                    const w = Math.round(img.width * scale);
+                    const h = Math.round(img.height * scale);
+                    imageGenCanvas.width = w;
+                    imageGenCanvas.height = h;
+                    imageGenCtx.drawImage(img, 0, 0, w, h);
+                    
+                    const imageData = imageGenCtx.getImageData(0, 0, w, h);
+                    const data = imageData.data;
+                    const pixels = [];
+                    for (let i = 0; i < data.length; i += 4) {
+                        pixels.push([data[i], data[i + 1], data[i + 2]]);
+                    }
+
+                    const k = parseInt(clusterSlider.value, 10);
+                    log(`Running k-means with k=${k} on ${pixels.length} pixels...`);
+                    
+                    const centroids = simpleKMeans(pixels, k);
+                    const hexes = centroids.map(rgb => rgbToHex(rgb[0], rgb[1], rgb[2]));
+
+                    const name = `ImgPal-${new Date().toISOString().slice(11, 19)}`;
+                    palettes[name] = hexes;
+                    savePalettes();
+                    updatePaletteDropdown();
+                    paletteDd.value = name;
+                    showPalettePreview();
+                    log(`Generated palette "${name}" with ${hexes.length} colors.`);
+
+                } catch (e) {
+                    log('Error generating palette: ' + e.message, true);
+                } finally {
+                    genPaletteBtn.disabled = false;
+                    genPaletteBtn.textContent = 'Generate';
+                }
+            });
+
+
+            // --- MAIN VIDEO PROCESSING ---
+            runBtn.addEventListener('click', () => {
+                if (!currentVideoFile) {
+                    alert('Please upload a video file first.');
+                    return;
+                }
+                if (palettes[paletteDd.value].length === 0) {
+                    alert('The selected palette is empty. Please add colors.');
+                    return;
+                }
+                runProcess();
+            });
+
+            const runProcess = async () => {
+                log('Process started...');
+                runBtn.disabled = true;
+                runBtn.textContent = 'Processing...';
+                outputVideo.classList.add('hidden');
+                downloadLink.classList.add('hidden');
+                procBar.value = 0;
+                encBar.value = 0;
+
+                // 1. Get settings
+                const targetFps = parseInt(fpsSlider.value, 10);
+                const bw = parseInt(blockWSlider.value, 10);
+                const smoothing = parseInt(smoothSlider.value, 10);
+                const alpha = smoothing / 100.0;
+                const offsets = [
+                    parseInt(rSlider.value, 10),
+                    parseInt(gSlider.value, 10),
+                    parseInt(bSlider.value, 10)
+                ];
+                const paletteHex = palettes[paletteDd.value];
+                const paletteRgb = paletteHex.map(hexToRgb);
+
+                // 2. Calculate dimensions
+                const w = videoWidth;
+                const h = videoHeight;
+                const bh = Math.round(bw * h / w);
+                log(`Processing at ${w}x${h} -> ${bw}x${bh} blocks.`);
+
+                // 3. Setup canvases
+                mainCanvas.width = w;
+                mainCanvas.height = h;
+                pixelCanvas.width = bw;
+                pixelCanvas.height = bh;
+                
+                // CRUCIAL: Disable smoothing for pixelation effect
+                mainCtx.imageSmoothingEnabled = false;
+
+                // 4. Setup MediaRecorder
+                recordedChunks = [];
+                const stream = mainCanvas.captureStream(targetFps);
+                
+                let mimeType = 'video/webm;codecs=vp9';
+                if (!MediaRecorder.isTypeSupported(mimeType)) {
+                    mimeType = 'video/webm;codecs=vp8';
+                    if (!MediaRecorder.isTypeSupported(mimeType)) {
+                        mimeType = 'video/webm';
+                    }
+                }
+                log(`Using mimeType: ${mimeType}`);
+                
+                try {
+                    mediaRecorder = new MediaRecorder(stream, { mimeType });
+                } catch (e) {
+                    log(`Error creating MediaRecorder: ${e.message}`, true);
+                    runBtn.disabled = false;
+                    runBtn.textContent = 'Run Process';
+                    return;
+                }
+
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) {
+                        recordedChunks.push(e.data);
+                    }
+                };
+
+                mediaRecorder.onstart = () => {
+                    log('Recording started...');
+                    encBar.value = 50; // Show as "in progress"
+                };
+
+                mediaRecorder.onstop = () => {
+                    log('Recording stopped. Finalizing video...');
+                    encBar.value = 100;
+                    
+                    const blob = new Blob(recordedChunks, { type: mimeType.split(';')[0] });
+                    const url = URL.createObjectURL(blob);
+                    
+                    outputVideo.src = url;
+                    outputVideo.classList.remove('hidden');
+                    
+                    downloadLink.href = url;
+                    downloadLink.download = `pixelated_output.webm`;
+                    downloadLink.textContent = 'Download Video (.webm)';
+                    downloadLink.classList.remove('hidden');
+
+                    runBtn.disabled = false;
+                    runBtn.textContent = 'Run Process';
+                    log('Process complete!');
+                };
+
+                mediaRecorder.start();
+
+                // 5. The Processing Loop
+                let currentTime = 0;
+                const interval = 1 / targetFps;
+                let prevFrameData = null; // This will hold the smoothed pixel data from the *previous* frame
+
+                // Use requestAnimationFrame for a smooth loop that yields to the browser
+                // We'll control the timing manually using seek
+                videoElement.currentTime = 0;
+                
+                await new Promise(resolve => {
+                    videoElement.onseeked = resolve;
+                });
+
+                const processFrame = async () => {
+                    if (currentTime > videoDuration) {
+                        mediaRecorder.stop();
+                        return;
+                    }
+
+                    // Seek to the next frame time
+                    videoElement.currentTime = currentTime;
+                    
+                    // Wait for the seek to complete
+                    await new Promise(resolve => {
+                        videoElement.onseeked = resolve;
+                    });
+                    
+                    // a. Get Full Frame
+                    mainCtx.drawImage(videoElement, 0, 0, w, h);
+
+                    // b. Adjust RGB
+                    let imageData = mainCtx.getImageData(0, 0, w, h);
+                    let data = imageData.data;
+                    for (let i = 0; i < data.length; i += 4) {
+                        data[i] = clamp(data[i] + offsets[0], 0, 255);
+                        data[i + 1] = clamp(data[i + 1] + offsets[1], 0, 255);
+                        data[i + 2] = clamp(data[i + 2] + offsets[2], 0, 255);
+                    }
+                    mainCtx.putImageData(imageData, 0, 0);
+
+                    // c. Pixelate
+                    pixelCtx.drawImage(mainCanvas, 0, 0, bw, bh); // Down-sample
+                    mainCtx.drawImage(pixelCanvas, 0, 0, w, h); // Up-sample (nearest neighbor)
+
+                    // d. Smoothing & Palette Mapping
+                    imageData = mainCtx.getImageData(0, 0, w, h);
+                    data = imageData.data;
+                    let currentFrameData = new Float32Array(data.length); // Store smoothed pixels for next frame
+
+                    for (let i = 0; i < data.length; i += 4) {
+                        let r = data[i];
+                        let g = data[i + 1];
+                        let b = data[i + 2];
+                        
+                        // d. Smoothing
+                        if (prevFrameData && smoothing > 0) {
+                            r = (1 - alpha) * r + alpha * prevFrameData[i];
+                            g = (1 - alpha) * g + alpha * prevFrameData[i + 1];
+                            b = (1 - alpha) * b + alpha * prevFrameData[i + 2];
+                        }
+                        
+                        // Store for next frame's smoothing
+                        currentFrameData[i] = r;
+                        currentFrameData[i + 1] = g;
+                        currentFrameData[i + 2] = b;
+                        // Alpha channel (currentFrameData[i+3]) is not needed for smoothing
+
+                        // e. Map to Palette
+                        const [nr, ng, nb] = findClosestColor([r, g, b], paletteRgb);
+                        
+                        // f. Write back
+                        data[i] = nr;
+                        data[i + 1] = ng;
+                        data[i + 2] = nb;
+                        // data[i+3] (alpha) remains unchanged
+                    }
+                    
+                    prevFrameData = currentFrameData; // Save for next iteration
+                    
+                    // g. Put Final Data (This frame is captured by the MediaRecorder)
+                    mainCtx.putImageData(imageData, 0, 0);
+
+                    // h. Next Frame
+                    procBar.value = (currentTime / videoDuration) * 100;
+                    currentTime += interval;
+
+                    // Request next frame
+                    requestAnimationFrame(processFrame);
+                };
+
+                // Start the loop
+                log('Starting frame-by-frame processing...');
+                requestAnimationFrame(processFrame);
+            };
+
+
+            // --- INITIALIZATION ---
+            const init = () => {
+                log('Application initialized. Please upload a video.');
+                loadPalettes();
+            };
+
+            init();
+        });
+    </script>
+</body>
+</html>
